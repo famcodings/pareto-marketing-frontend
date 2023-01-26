@@ -1,5 +1,5 @@
 (function () {
-  const SERVER_URL = "http://138.197.108.65:1337"
+  const SERVER_URL = "http://138.197.108.65:8337"
   window.onload = async function () {
     try {
       const { data } = await fetchArticles();
