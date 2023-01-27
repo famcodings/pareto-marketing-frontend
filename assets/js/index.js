@@ -3,8 +3,8 @@
   window.onload = async function () {
     try {
       const { data } = await fetchPage();
-      if (data && data.length) {
-        populateLandingPage(data[0])
+      if (data) {
+        populateLandingPage(data)
       }
       finishLoading()
     } catch (error) {
@@ -13,7 +13,7 @@
   };
 
   function fetchPage() {
-    return fetch(`${SERVER_URL}/api/pages?populate[block][populate]=*&filters[pageType][$eq]=Saas-v.3`)
+    return fetch(`${SERVER_URL}/api/page/?populate[blocks][populate]=*`)
       .then((response) => response.json());
   }
 
@@ -25,7 +25,7 @@
 
   function populateLandingPage(page) {
     const mainElement = document.querySelector("main");
-    const { title, block: blocks } = page.attributes;
+    const { title, blocks } = page.attributes;
     document.title = title
     
     blocks.forEach(block => {
