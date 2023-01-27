@@ -734,7 +734,7 @@
       <div class="container text-center pt-lg-3">
         <div class="navbar-brand justify-content-center text-dark mb-2 mb-lg-4">
         ${
-          footer.footerImage?data ? `
+          footer.footerImage?.data ? `
             <img src="${SERVER_URL}${footer.footerImage.data.attributes.url}" class="me-2" width="60" alt="Silicon">
           ` : ""
         }
