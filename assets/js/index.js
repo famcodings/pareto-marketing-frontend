@@ -1,20 +1,38 @@
 (function () {
+  const API_TOKEN = "2f896640265cbb108e4a3863bd2ffcd37865dcd473a6c3b77df77c0cc87d2b8c4de885404a996fc3d957140eda649bec079e509843dc55f39cd827a0add80d4a30f4fbcdb040f243b551bfe98d6f8881a1be21464bcd21910dc97acfece21917b5d07c747e22f3802407f6b34abd538b08db588c5c41228adb63275b590eb8ba";
   const SERVER_URL = "http://138.197.108.65:8337"
+  const QUERY_PARAMS = new Proxy(new URLSearchParams(window.location.search), {
+    get: (searchParams, prop) => searchParams.get(prop),
+  });
+  let allPages = [];
+
   window.onload = async function () {
-    try {
-      const { data } = await fetchPage();
-      if (data) {
-        populateLandingPage(data)
-      }
-      finishLoading()
-    } catch (error) {
-      console.error(error);
+    await getAllSlugs()
+    populateLandingPagesNavDropDown()
+    if (QUERY_PARAMS.slug) {
+      await showPageContentOr404();
+    } else {
+      showAvailablePagesListList();
     }
+    finishLoading()
   };
 
-  function fetchPage() {
-    return fetch(`${SERVER_URL}/api/page/?populate[blocks][populate]=*`)
-      .then((response) => response.json());
+  function http(url) {
+    return fetch(`${SERVER_URL}${url}`, {
+      credentials: 'include',
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`
+      }
+    }).then((response) => response.json());
+  }
+
+  async function getAllSlugs() {
+    const { data } = await http("/api/landing-pages?fields[0]=slug&fields[0]=title");
+    allPages = data
+  }
+
+  function fetchLandingPageContent(slug) {
+    return http(`/api/landing-pages?filters[slug][$eq]=${slug}&populate[blocks][on][blocks.two-columns-image-right][populate]=*&populate[blocks][on][blocks.video][populate]=*&populate[blocks][on][blocks.two-columns-image-on-left][populate]=*&populate[blocks][on][blocks.hero][populate]=*&populate[blocks][on][blocks.logos][populate]=*&populate[blocks][on][blocks.how-does-it-work][populate]=*&populate[blocks][on][blocks.call-to-action][populate]=*&populate[blocks][on][blocks.hero-single-column][populate]=*&populate[blocks][on][blocks.2x3-grid][populate][0]=items&populate[blocks][on][blocks.2x3-grid][populate][1]=items.image&populate[blocks][on][blocks.testimonials][populate]=*&populate[blocks][on][blocks.pricing][populate][0]=items&populate[blocks][on][blocks.pricing][populate][1]=items.button&populate[blocks][on][blocks.4x2-grid][populate][0]=items&populate[blocks][on][blocks.4x2-grid][populate][1]=items.image&populate[blocks][on][blocks.call-to-action-1][populate]=*&populate[blocks][on][blocks.footer][populate]=*`);
   }
 
   function finishLoading() {
@@ -23,17 +41,56 @@
     preloader.remove();
   }
 
-  function populateLandingPage(page) {
+  async function showPageContentOr404() {
+    try {
+      const { data } = await fetchLandingPageContent(QUERY_PARAMS.slug);
+      if (data && data.length) {
+        populateLandingPage(data[0])
+      } else {
+        show404()
+      }
+    } catch (error) {
+      console.error(error);
+    } 
+  }
+
+  function populateLandingPagesNavDropDown() {
+    const ulElement = document.getElementById("navbar-landing-pages-dp-ul")
+    const liHTML = allPages.map(page => `
+      <li><a href="index.html?slug=${page.attributes.slug}" class="dropdown-item">${page.attributes.title}</a></li>
+    `).join("")
+    ulElement.insertAdjacentHTML("beforeend", liHTML);
+  }
+
+  function show404() {
     const mainElement = document.querySelector("main");
-    const { title, blocks } = page.attributes;
+    const addSectionToPage = (section) => mainElement.insertAdjacentHTML("beforeend", section)
+    addSectionToPage(get404HTML())
+  }
+
+  function showAvailablePagesListList() {
+    const mainElement = document.querySelector("main");
+    const addSectionToPage = (section) => mainElement.insertAdjacentHTML("beforeend", section)
+    if (allPages.length) {
+      addSectionToPage(getAvailablePagesGridHTML())
+    } else {
+      addSectionToPage(getNoContentMessageHTML())
+    }
+  }
+
+  function populateLandingPage(pageContent) {
+    const mainElement = document.querySelector("main");
+    const { title, blocks } = pageContent.attributes;
     document.title = title
     
     blocks.forEach(block => {
-      const addSectionToPage = (section) => mainElement.insertAdjacentHTML("beforeend", section)
+      const addSectionToPage = (section, position="beforeend") => mainElement.insertAdjacentHTML(position, section)
       if (block.__component === "blocks.hero") {
-        addSectionToPage(getHeroSectionHTML(block))
+        addSectionToPage(getHeroHTML(block))
+      } else if (block.__component === "blocks.hero-single-column") {
+        addSectionToPage(getHeroSigleColumnHTML(block))
       } else if (block.__component === "blocks.logos") {
-        addSectionToPage(getLogosSectionHTML(block))
+        addSectionToPage(getLogosHTML(block))
         initSwiper(mainElement.lastElementChild.querySelector(".swiper"))
       } else if (block.__component === "blocks.two-columns-image-right") {
         addSectionToPage(getTwoColumnsImageOnRightHTML(block))
@@ -48,6 +105,16 @@
         initSwiper(mainElement.lastElementChild.querySelector(".swiper"))
       } else if (block.__component === "blocks.call-to-action") {
         addSectionToPage(getCTAHTML(block))
+      } else if (block.__component === "blocks.2x3-grid") {
+        addSectionToPage(get2x3GridHTML(block))
+      } else if (block.__component === "blocks.pricing") {
+        addSectionToPage(getPricingHTML(block))
+      } else if (block.__component === "blocks.4x2-grid") {
+        addSectionToPage(get2x4GridHTML(block))
+      } else if (block.__component === "blocks.call-to-action-1") {
+        addSectionToPage(getCTA1HTML(block))
+      } else if (block.__component === "blocks.footer") {
+        addSectionToPage(getFooterHTML(block), "afterend")
       }
     });
   }
@@ -57,7 +124,7 @@
     new Swiper(element, swiperOptions)
   }
 
-  const getHeroSectionHTML = (hero) => {
+  const getHeroHTML = (hero) => {
     let primaryCallToActionButtonHTML = "";
     let secondaryCallToActionButtonHTML = "";
     if (hero.primaryCallToAction) {
@@ -68,7 +135,7 @@
     }
     return `
       <!-- Hero -->
-      <section class="dark-mode bg-dark bg-size-cover bg-repeat-0 bg-position-center position-relative overflow-hidden py-5 mb-4" style="background-image: url(assets/img/landing/saas-3/hero/hero-bg.jpg);">
+      <section class="dark-mode bg-dark bg-size-cover bg-repeat-0 bg-position-center position-relative overflow-hidden py-5" style="background-image: url(assets/img/landing/saas-3/hero/hero-bg.jpg);">
         <div class="container position-relative zindex-2 pt-5 pb-md-2 pb-lg-4 pb-xl-5">
           <div class="row pt-3 pb-2 py-md-4">
 
@@ -118,7 +185,7 @@
     `
   }
 
-  function getLogosSectionHTML(logos) {
+  function getLogosHTML(logos) {
     return `
       <section class="container border-bottom-lg pt-sm-2">
         <div class="swiper mx-n2" data-swiper-options='{
@@ -446,6 +513,352 @@
               : ""
             }
           </div>
+        </div>
+      </div>
+    </section>
+    `
+  }
+
+  const getHeroSigleColumnHTML = (hero) => {
+    let callToActionButtonHTML = "";
+    if (hero.callToAction) {
+      callToActionButtonHTML = `<a href="${hero.callToAction.link}" ${hero.callToAction.isExternal ? `target="__blank"` : ""} class="btn btn-primary shadow-primary btn-lg">${hero.callToAction.title}</a>`
+    }
+    return `
+    <!-- Hero -->
+    <section class="position-relative overflow-hidden">
+      <div class="position-relative bg-dark zindex-4 pt-lg-3 pt-xl-5">
+
+        <!-- Text -->
+        <div class="container zindex-5 pt-5">
+          <div class="row justify-content-center text-center pt-4 pb-sm-2 py-lg-5">
+            <div class="col-xl-8 col-lg-9 col-md-10 py-5">
+              <h1 class="display-4 text-light pt-sm-2 pb-1 pb-sm-3 mb-3">${hero.title}</h1>
+              <p class="fs-lg text-light opacity-70 pb-2 pb-sm-0 mb-4 mb-sm-5">
+                ${hero.description ? hero.description : ""}
+              </p>
+              ${callToActionButtonHTML}
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom shape -->
+        <div class="d-flex position-absolute top-100 start-0 w-100 overflow-hidden mt-n4 mt-sm-n1" style="color: var(--si-dark);">
+          <div class="position-relative start-50 translate-middle-x flex-shrink-0" style="width: 3788px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="3788" height="144" viewBox="0 0 3788 144"><path fill="currentColor" d="M0,0h3788.7c-525,90.2-1181.7,143.9-1894.3,143.9S525,90.2,0,0z"/></svg>
+          </div>
+        </div>
+        <div class="d-none d-lg-block" style="height: 300px;"></div>
+        <div class="d-none d-md-block d-lg-none" style="height: 150px;"></div>
+      </div>
+      <div class="position-relative zindex-5 mx-auto" style="max-width: 1250px; transform: translateZ(-100px);">
+        <div class="d-none d-lg-block" style="margin-top: -300px;"></div>
+        <div class="d-none d-md-block d-lg-none" style="margin-top: -150px;"></div>
+          
+        <!-- Parallax (3D Tilt) gfx -->
+        <div class="tilt-3d" data-tilt data-tilt-full-page-listening data-tilt-max="12" data-tilt-perspective="1200">
+          <img src="assets/img/landing/saas-2/hero/layer01.png" alt="Dashboard">
+          <div class="tilt-3d-inner position-absolute top-0 start-0 w-100 h-100">
+            <img src="assets/img/landing/saas-2/hero/layer02.png" alt="Cards">
+          </div>
+        </div>
+      </div>
+      <div class="position-absolute top-0 start-0 w-100 h-100" style="background-color: rgba(255,255,255,.05);"></div>
+    </section>
+    `
+  }
+
+  function get2x3GridHTML(grid2x3) {
+    return `
+    <!-- Features -->
+    <section class="position-relative py-5">
+      <div class="container position-relative zindex-5 pb-md-4 pt-md-2 pt-lg-3 pb-lg-5">
+        <div class="row justify-content-center text-center pb-3 mb-sm-2 mb-lg-3">
+          <div class="col-xl-6 col-lg-7 col-md-9">
+            <h2 class="h1 mb-lg-4">${grid2x3.title ? grid2x3.title : ""}</h2>
+            <p class="fs-lg text-muted mb-0">
+              ${grid2x3.description ? grid2x3.description : ""}
+            </p>
+          </div>
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-0 pb-xl-3">
+
+          ${
+            grid2x3.items.map((item, index) => `
+              <!-- Item -->
+              <div class="col position-relative">
+                <div class="card border-0 bg-transparent rounded-0 p-md-1 p-xl-3">
+                  <div class="d-table bg-secondary rounded-3 p-3 mx-auto mt-3 mt-md-4">
+                    <img src="${SERVER_URL}${item.image.data.attributes.url}" width="40" alt="Comments">
+                  </div>
+                  <div class="card-body text-center">
+                    <h3 class="h5 pb-1 mb-2">${item.title}</h3>
+                    <p class="mb-0">${item.description ? item.description : ""}</p>
+                  </div>
+                </div>
+                ${
+                  index < 3 ? `
+                    <hr class="position-absolute top-0 end-0 w-1 h-100 d-none d-sm-block">
+                    <hr class="position-absolute top-100 start-0 w-100 d-none d-sm-block">
+                  ` : ""
+                }
+              </div>
+            `).join("")
+          }
+
+        </div>
+      </div>
+      <div class="position-absolute top-0 start-0 w-100 h-100" style="background-color: rgba(255,255,255,.05);"></div>
+    </section>
+    `
+  }
+
+  function getPricingHTML(pricing) {
+    return `
+    <!-- Pricing -->
+    <section class="container pt-5">
+      <div class="row justify-content-center text-center pt-2 pt-md-4 pt-lg-5 pb-4 pb-lg-5 mb-1">
+        <div class="col-xl-6 col-lg-7 col-md-9 col-sm-11 pt-xl-3">
+          <h2 class="h1 mb-lg-4">${pricing.title}</h2>
+          <p class="fs-lg text-muted mb-0">${pricing.description ? pricing.description : ""}</p>
+        </div>
+      </div>
+      <div class="table-responsive-lg">
+        <div class="d-flex align-items-center pb-4">
+      
+          <!-- Pricing plan -->
+          <div class="bg-primary rounded-3 shadow-primary p-4" style="width: 36%; min-width: 18rem;">
+            <div class="card bg-transparent border-light py-3 py-sm-4 py-lg-5">
+              <div class="card-body text-light text-center">
+                <h3 class="text-light mb-2">${pricing.items[0].title}</h3>
+                <div class="fs-lg opacity-70 pb-4 mb-3">${pricing.items[0].subtitle}</div>
+                <div class="display-5 mb-1">$${pricing.items[0].price}</div>
+                <div class="opacity-50 mb-5">${pricing.items[0].priceDescription}</div>
+              </div>
+              <div class="card-footer border-0 text-center pt-0 pb-4">
+                ${
+                  pricing.items[0].button ? `
+                    <a href="${pricing.items[0].button.link}" ${pricing.items[0].button.isExternal ? `target="__blank"` : ""} class="btn btn-light btn-lg shadow-secondary">
+                      ${pricing.items[0].button.title}
+                    </a>
+                  ` : ""
+                }
+              </div>
+            </div>
+          </div>
+          <div class="row flex-nowrap border rounded-3 rounded-start-0 shadow-sm g-0" style="width: 64%; min-width: 32rem;">
+                ${
+                  pricing.items.map((item, index) => index > 0 ? `
+                  <!-- Pricing plan -->
+                  <div class="col">
+                    <div class="card bg-light h-100 border-0 border-end rounded-0 py-3 py-sm-4 py-lg-5">
+                      <div class="card-body text-center">
+                        <h3 class="mb-2">${item.title}</h3>
+                        <div class="fs-lg pb-4 mb-3">${item.subtitle}</div>
+                        <div class="display-5 text-dark mb-1">$${item.price}</div>
+                        <div class="text-muted mb-5">${item.priceDescription}</div>
+                      </div>
+                      <div class="card-footer border-0 text-center pt-0 pb-4">
+                        ${
+                          item.button ? `
+                            <a href="${item.button.link}" ${item.button.isExternal ? `target="__blank"` : ""} class="btn btn-light btn-lg shadow-secondary">
+                              ${item.button.title}
+                            </a>
+                          ` : ""
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  ` : "").join("")
+                }
+          </div>
+        </div>
+      </div>
+    </section>
+    `
+  }
+
+  function get2x4GridHTML(grid2x4) {
+    return `
+    <section class="container mt-n1 mt-md-0 py-5">
+      <div class="row justify-content-center text-center pt-md-3 pb-4 py-lg-5 mb-1">
+        <div class="col-xl-8 col-lg-9 col-md-10">
+          <h2 class="h1 mb-lg-4">${grid2x4.title}</h2>
+          <p class="fs-lg text-muted mb-0">
+            ${grid2x4.description}
+          </p>
+        </div>
+      </div>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-2 g-sm-3 g-lg-4 pb-md-3 pb-lg-5">
+        
+      ${
+        grid2x4.items.map(item => `
+          <!-- Item -->
+          <div class="col">
+            <div class="card card-body card-hover bg-light border-0">
+              <img src="${SERVER_URL}${item.image.data.attributes.url}" class="d-block mb-4" width="56" alt="Zoom">
+              <p class="mb-0">${item.description ? item.description : ""}</p>
+            </div>
+          </div>
+        `).join("")
+      }
+        
+      </div>
+    </section>
+    `
+  }
+
+  function getCTA1HTML(cta) {
+    return `
+    <section class="bg-secondary py-5">
+      <div class="container text-center py-1 py-md-4 py-lg-5">
+        <h2 class="h1 mb-4">${cta.title}</h2>
+        <p class="lead pb-3 mb-3">${cta.description}</p>
+
+        ${
+          cta.button ? `
+            <a href="${cta.button.link}" ${cta.button.isExternal ? `target="__blank"` : ""} class="btn btn-primary shadow-primary btn-lg mb-1">
+              ${cta.button.title}
+            </a>
+          ` : ""
+        }
+      </div>
+    </section>
+    `
+  }
+
+  function getFooterHTML(footer) {
+    return `
+    <!-- Footer -->
+    <footer class="footer bg-dark dark-mode pt-5 pb-4 pb-lg-5">
+      <div class="container text-center pt-lg-3">
+        <div class="navbar-brand justify-content-center text-dark mb-2 mb-lg-4">
+        ${
+          footer.footerImage ? `
+            <img src="${SERVER_URL}${footer.footerImage.data.attributes.url}" class="me-2" width="60" alt="Silicon">
+          ` : ""
+        }
+          <span class="fs-4">${footer.heading}</span>
+        </div>
+        ${
+          footer.links.length ? `
+          <ul class="nav justify-content-center pt-3 pb-4 pb-lg-5">
+            ${
+              footer.links.map(link => `
+                <li class="nav-item"><a href="${link.link}" class="nav-link">${link.name}</a></li>
+              `).join("")
+            }
+          </ul>
+          ` : ""
+        }
+        <div class="d-flex flex-column flex-sm-row justify-content-center">
+          ${
+            footer.googlePlayLink ? `
+              <a href="${footer.googlePlayLink}" class="btn btn-dark btn-lg px-3 py-2 me-sm-4 mb-3">
+                <img src="assets/img/market/appstore-light.svg" class="light-mode-img" width="124" alt="App Store">
+                <img src="assets/img/market/appstore-dark.svg" class="dark-mode-img" width="124" alt="App Store">
+              </a>
+            ` : ""
+          }
+          ${
+            footer.appleStoreLink ? `
+              <a href="${footer.appleStoreLink}" class="btn btn-dark btn-lg px-3 py-2 mb-3">
+                <img src="assets/img/market/googleplay-light.svg" class="light-mode-img" width="139" alt="Google Play">
+                <img src="assets/img/market/googleplay-dark.svg" class="dark-mode-img" width="139" alt="Google Play">
+              </a>
+            ` : ""
+          }
+        </div>
+        <div class="d-flex justify-content-center pt-4 mt-lg-3">
+          ${
+            footer.socialMediaLinks.map(link => `
+              <a href="${link.name}" class="btn btn-icon btn-secondary btn-${link.icon} mx-2">
+                <i class="bx bxl-${link.icon}"></i>
+              </a>
+            `).join("")
+          }
+        </div>
+        <p class="nav d-block fs-sm text-center pt-5 mt-lg-4 mb-0">
+          <span class="text-light opacity-60">&copy; All rights reserved. ${ footer.madeBy ? "Made by " : ""}</span>
+          ${
+            footer.madeBy ? `
+              <a class="nav-link d-inline-block p-0" href="${footer.madeByLink ? footer.madeByLink : "#"}" target="_blank" rel="noopener">${footer.madeBy}</a>
+            ` : ""
+          }
+        </p>
+      </div>
+    </footer>
+    `
+  }
+
+  function get404HTML() {
+    return `
+    <section class="d-flex align-items-center min-vh-100 py-5 bg-light" style="background: radial-gradient(144.3% 173.7% at 71.41% 94.26%, rgba(99, 102, 241, 0.1) 0%, rgba(218, 70, 239, 0.05) 32.49%, rgba(241, 244, 253, 0.07) 82.52%);">
+      <div class="container my-5 text-md-start text-center">
+        <div class="row align-items-center">
+
+          <!-- Animation -->
+          <div class="col-xl-6 col-md-7 order-md-2 ms-n5">
+            <lottie-player src="assets/json/animation-404-v1.json" background="transparent" speed="1" loop autoplay></lottie-player>
+          </div>
+
+          <!-- Text -->
+          <div class="col-md-5 offset-xl-1 order-md-1">
+            <h1 class="display-1 mb-sm-4 mt-n4 mt-sm-n5">Error 404</h1>
+            <p class="mb-md-5 mb-4 mx-md-0 mx-auto pb-2 lead">The page you are looking for was moved, removed or might never existed.</p>
+            <a href="index.html" class="btn btn-lg btn-primary shadow-primary w-sm-auto w-100">
+              <i class="bx bx-home-alt me-2 ms-n1 lead"></i>
+              Go to homepage
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+    `
+  }
+
+  function getAvailablePagesGridHTML() {
+    return `
+    <div class="bg-secondary pt-5" style="padding-bottom: 228px;">
+    
+      <!-- Page title + Services grid -->
+      <section class="container pt-5 pb-2 pb-md-4 pb-lg-5 mb-3">
+        <h1 class="pb-4">Landing Pages</h1>
+        <div class="row row-cols-1 row-cols-md-2">
+          ${
+            allPages.map(page => `
+              <!-- Item -->
+              <div class="col py-4 my-2 my-sm-3">
+                <a href="index.html?slug=${page.attributes.slug}" class="card card-hover h-100 border-0 shadow-sm text-decoration-none pt-5 px-sm-3 px-md-0 px-lg-3 pb-sm-3 pb-md-0 pb-lg-3 me-xl-2">
+                  <div class="card-body pt-3">
+                    <h2 class="h4 d-inline-flex align-items-center">
+                      ${page.attributes.title}
+                      <i class="bx bx-right-arrow-circle text-primary fs-3 ms-2"></i>
+                    </h2>
+                  </div>
+                </a>
+              </div>
+            `).join("")
+          }
+
+        </div>
+      </section>
+    </div>
+    `
+  }
+
+
+  function getNoContentMessageHTML() {
+    return `
+    <section class="dark-mode bg-dark bg-size-cover bg-repeat-0 bg-position-center position-relative overflow-hidden py-5" style="background-image: url(assets/img/landing/saas-3/hero/hero-bg.jpg);">
+      <div class="container position-relative zindex-2 pt-5 pb-md-2 pb-lg-4 pb-xl-5">
+        <div class="row pt-3 pb-2 py-md-4">
+
+          <!-- Text -->
+          <div class="col pt-lg-5 text-center text-md-start mb-4 mb-md-0">
+            <h1 class="display-3 pb-2 pb-sm-3">There is no content available yet, please add some content from Strapi Dasboard.</h1>
+          </div>
+
         </div>
       </div>
     </section>
