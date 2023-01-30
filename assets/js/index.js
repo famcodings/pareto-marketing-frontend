@@ -780,7 +780,7 @@
         <div class="d-flex justify-content-center pt-4 mt-lg-3">
           ${
             footer.socialMediaLinks.map(link => `
-              <a href="${link.name}" class="btn btn-icon btn-secondary btn-${link.icon} mx-2">
+              <a href="${link.link}" class="btn btn-icon btn-secondary btn-${link.icon} mx-2">
                 <i class="bx bxl-${link.icon}"></i>
               </a>
             `).join("")
