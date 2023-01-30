@@ -32,7 +32,7 @@
   }
 
   function fetchLandingPageContent(slug) {
-    return http(`/api/landing-pages?filters[slug][$eq]=${slug}&populate[blocks][on][blocks.two-columns-image-right][populate]=*&populate[blocks][on][blocks.video][populate]=*&populate[blocks][on][blocks.two-columns-image-on-left][populate]=*&populate[blocks][on][blocks.hero][populate]=*&populate[blocks][on][blocks.logos][populate]=*&populate[blocks][on][blocks.how-does-it-work][populate]=*&populate[blocks][on][blocks.call-to-action][populate]=*&populate[blocks][on][blocks.hero-single-column][populate]=*&populate[blocks][on][blocks.2x3-grid][populate][0]=items&populate[blocks][on][blocks.2x3-grid][populate][1]=items.image&populate[blocks][on][blocks.testimonials][populate]=*&populate[blocks][on][blocks.pricing][populate][0]=items&populate[blocks][on][blocks.pricing][populate][1]=items.button&populate[blocks][on][blocks.4x2-grid][populate][0]=items&populate[blocks][on][blocks.4x2-grid][populate][1]=items.image&populate[blocks][on][blocks.call-to-action-1][populate]=*&populate[blocks][on][blocks.footer][populate]=*`);
+    return http(`/api/landing-pages?filters[slug][$eq]=${slug}&populate[blocks][on][blocks.trading-feature][populate]=*&populate[blocks][on][blocks.app-download-cta][populate]=*&populate[blocks][on][blocks.switch-between-light-and-dark-mode][populate]=*&populate[blocks][on][blocks.two-columns-image-right][populate]=*&populate[blocks][on][blocks.video][populate]=*&populate[blocks][on][blocks.two-columns-image-on-left][populate]=*&populate[blocks][on][blocks.hero][populate]=*&populate[blocks][on][blocks.logos][populate]=*&populate[blocks][on][blocks.how-does-it-work][populate]=*&populate[blocks][on][blocks.call-to-action][populate]=*&populate[blocks][on][blocks.hero-single-column][populate]=*&populate[blocks][on][blocks.2x3-grid][populate][0]=items&populate[blocks][on][blocks.2x3-grid][populate][1]=items.image&populate[blocks][on][blocks.testimonials][populate]=*&populate[blocks][on][blocks.pricing][populate][0]=items&populate[blocks][on][blocks.pricing][populate][1]=items.button&populate[blocks][on][blocks.4x2-grid][populate][0]=items&populate[blocks][on][blocks.4x2-grid][populate][1]=items.image&populate[blocks][on][blocks.call-to-action-1][populate]=*&populate[blocks][on][blocks.footer][populate]=*`);
   }
 
   function finishLoading() {
@@ -115,6 +115,12 @@
         addSectionToPage(getCTA1HTML(block))
       } else if (block.__component === "blocks.footer") {
         addSectionToPage(getFooterHTML(block), "afterend")
+      } else if (block.__component === "blocks.switch-between-light-and-dark-mode") {
+        addSectionToPage(getSwitchBetweenLightAndDarkModesHTML(block))
+      } else if (block.__component === "blocks.app-download-cta") {
+        addSectionToPage(getAppDownloadCTAHTML(block))
+      } else if (block.__component === "blocks.trading-feature") {
+        addSectionToPage(getTradingFeatureHTML(block))
       }
     });
   }
@@ -472,7 +478,7 @@
   function getCTAHTML(cta) {
     return `
     <!-- CTA -->
-    <section class="container">
+    <section class="container mb-3">
       <div class="dark-mode bg-dark bg-size-cover bg-position-center bg-repeat-0 position-relative overflow-hidden rounded-3 py-lg-3 py-xl-5 px-4 px-lg-5 px-xl-0" style="background-image: url(assets/img/landing/saas-3/cta-bg.jpg);">
         <div class="row position-relative zindex-2 py-5 my-1 my-md-3">
           <div class="col-md-6">
@@ -862,6 +868,149 @@
         </div>
       </div>
     </section>
+    `
+  }
+
+  function getSwitchBetweenLightAndDarkModesHTML(switchBetweenLightAndDarkModes) {
+    if (!switchBetweenLightAndDarkModes.show) {
+      return ""
+    }
+    return `
+      <!-- Light / Dark mode (Comparison slider) -->
+      <section class="d-flex w-100 position-relative overflow-hidden">
+        <div class="position-relative flex-xl-shrink-0 zindex-5 start-50 translate-middle-x" style="max-width: 1920px;">
+          <div class="mx-md-n5 mx-xl-0">
+            <div class="mx-n4 mx-sm-n5 mx-xl-0">
+              <div class="mx-n5 mx-xl-0">
+                <img-comparison-slider class="mx-n5 mx-xl-0 rendered" tabindex="0">
+                  <img slot="first" src="assets/img/landing/saas-2/dark-mode.jpg" alt="Dak Mode">
+                  <img slot="second" src="assets/img/landing/saas-2/light-mode.jpg" alt="Light Mode">
+                  <div slot="handle" style="width: 36px;">
+                    <svg class="text-primary shadow-primary rounded-circle" width="36" height="36" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 36 36"><g><circle fill="currentColor" cx="18" cy="18" r="18"></circle></g><path fill="#fff" d="M22.2,17.2h-8.3v-3.3L9.7,18l4.2,4.2v-3.3h8.3v3.3l4.2-4.2l-4.2-4.2V17.2z"></path></svg>
+                  </div>
+                </img-comparison-slider>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="position-absolute top-0 start-0 w-50 h-100 bg-dark"></div>
+        <div class="position-absolute top-0 end-0 w-50 h-100" style="background-color: #f3f6ff;"></div>
+      </section>
+    `;
+  }
+
+  function getAppDownloadCTAHTML(appDownloadCTA) {
+    if (!appDownloadCTA.show) {
+      return ""
+    }
+    return `
+    <section class="container">
+      <div class="bg-secondary rounded-3 overflow-hidden py-5 px-4 ps-lg-0 pe-md-5 pe-lg-0">
+        <div class="row align-items-center py-sm-2">
+
+          <!-- Parallax gfx -->
+          <div class="col-md-7 col-lg-6 offset-xl-1">
+            <div class="position-relative mx-auto mb-5 m-md-0" style="max-width: 526px;">
+              <img src="assets/img/landing/saas-2/device.png" class="d-block" alt="Device">
+              <div class="rellax d-block position-absolute top-0 end-0 w-100 mt-md-4 me-md-n5" alt="App Screen" data-rellax-percentage="0.5" data-rellax-vertical-scroll-axis="xy" data-rellax-horizontal-speed="0.6" data-rellax-vertical-speed="-0.6" data-disable-parallax-down="md" style="transform: translate3d(-128px, -23px, 0px);">
+                <img src="assets/img/landing/saas-2/screen.png">
+              </div>
+            </div>
+          </div>
+
+          <!-- Text + Download buttons -->
+          <div class="col-xl-4 col-md-5 mt-n2 mt-md-0">
+            <h2 class="h1 text-center text-md-start mb-4 mb-lg-5">Download Our App for Any Devices:</h2>
+            <div class="row">
+              <div class="col-sm-6 col-md-12 pb-4 pb-sm-0">
+                <div class="row row-cols-1 row-cols-lg-2 align-items-end text-center text-md-start pb-md-4 mb-lg-3">
+                  <div class="col mb-3 mb-lg-0">
+                    <p class="text-muted mb-1">App Store</p>
+                    <div class="text-nowrap fs-sm pb-lg-1 mb-2">
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                    </div>
+                    <h3 class="h4 mb-1">Editor's Choice</h3>
+                    <p class="mb-0">rating 4.7, 187K+ reviews</p>
+                  </div>
+                  <div class="col d-lg-flex justify-content-end">
+                    <a href="#" class="btn btn-dark btn-lg px-3 py-2">
+                      <img src="assets/img/market/appstore-light.svg" class="light-mode-img" width="124" alt="App Store">
+                      <img src="assets/img/market/appstore-dark.svg" class="dark-mode-img" width="124" alt="App Store">
+                    </a>        
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-12">
+                <div class="row row-cols-1 row-cols-lg-2 align-items-end text-center text-md-start">
+                  <div class="col mb-3 mb-lg-0">
+                    <p class="text-muted mb-1">Google Play</p>
+                    <div class="text-nowrap fs-sm pb-lg-1 mb-2">
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                      <i class="bx bxs-star text-warning"></i>
+                    </div>
+                    <h3 class="h4 mb-1">App of the Day</h3>
+                    <p class="mb-0">rating 4.8, 30K+ reviews</p>
+                  </div>
+                  <div class="col d-lg-flex justify-content-end">
+                    <a href="#" class="btn btn-dark btn-lg px-3 py-2">
+                      <img src="assets/img/market/googleplay-light.svg" class="light-mode-img" width="139" alt="Google Play">
+                      <img src="assets/img/market/googleplay-dark.svg" class="dark-mode-img" width="139" alt="Google Play">
+                    </a>               
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    `;
+  }
+
+  function getTradingFeatureHTML(tradingFeature) {
+    if (!tradingFeature.show) {
+      return
+    }
+    return `
+      <section class="container py-5 my-md-2 my-lg-4 my-xl-5">
+        <!-- Text -->
+        <h2 class="h1 text-center mx-auto mt-n2 mt-sm-0 pt-md-2" style="max-width: 530px;">Get Possibilities for Better Trading with Silicon</h2>
+        <ul class="list-unstyled d-flex flex-wrap justify-content-center mb-5">
+          <li class="d-flex fs-xl mx-3 mt-2 mt-sm-3">
+            <i class="bx bx-check lead text-primary mt-1 me-2"></i>
+            <span>Spend with the Crypto and get up to <strong class="text-primary ms-1">12% back</strong></span>
+          </li>
+          <li class="d-flex fs-xl mx-3 mt-2 mt-sm-3">
+            <i class="bx bx-check lead text-primary mt-1 me-2"></i>
+            <span>Invite friends and get <strong class="text-primary ms-1">new opportunities</strong></span>
+          </li>
+          <li class="d-flex fs-xl mx-3 mt-2 mt-sm-3">
+            <i class="bx bx-check lead text-primary mt-1 me-2"></i>
+            <span>Trade and earn <strong class="text-primary mx-1">200+ cryptocurrencies</strong> and get a permanent <strong class="text-primary ms-1">5% discount</strong></span>
+          </li>
+        </ul>
+
+        <!-- Parallax gfx -->
+        <div class="position-relative px-4 px-sm-5 mb-3 mb-md-4">
+          <img src="assets/img/landing/saas-3/feature-1/main.png" width="1079" class="d-block mx-auto" style="border-radius: 1.5rem; box-shadow: 0 1.875rem 7.5rem -.625rem rgba(124,125,152, .2);" alt="Dashboard">
+          <div class="position-absolute w-100" style="left: 0; bottom: 13%; padding-right: 74.33%;">
+            <img src="assets/img/landing/saas-3/feature-1/popup01.png" width="308" class="rellax d-block" style="border-radius: 0.75rem; box-shadow: rgba(124, 125, 152, 0.2) 0px 0.75rem 3.75rem -0.625rem; transform: translate3d(-28px, 102px, 0px);" alt="Popup" data-rellax-percentage="0.5" data-rellax-speed="1" data-disable-parallax-down="lg">
+          </div>
+          <div class="position-absolute w-100" style="right: 0; top: 12%; padding-left: 74.16%;">
+            <img src="assets/img/landing/saas-3/feature-1/popup02.png" width="310" class="rellax d-block" style="border-radius: 0.75rem; box-shadow: rgba(126, 123, 160, 0.2) -0.46875rem 2.25rem 6.5rem 0px; transform: translate3d(28px, 57px, 0px);" alt="Popup" data-rellax-percentage="0.5" data-rellax-speed="1" data-disable-parallax-down="lg">
+          </div>
+          <div class="position-absolute w-100" style="right: 0; bottom: 9.4%; padding-left: 64.83%; padding-right: 5.5%;">
+            <img src="assets/img/landing/saas-3/feature-1/popup03.png" width="322" class="rellax d-block ms-auto" style="border-radius: 0.75rem; box-shadow: rgba(120, 118, 148, 0.14) -0.46875rem 2.25rem 6.5rem 0px; transform: translate3d(11px, 67px, 0px);" alt="Popup" data-rellax-percentage="0.5" data-rellax-speed=".5" data-disable-parallax-down="lg">
+          </div>
+        </div>
+      </section>
     `
   }
 
