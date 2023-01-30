@@ -487,18 +487,20 @@
                 ${cta.title}
               </h2>
               <ul class="list-unstyled fs-lg d-md-none pb-3">
-                <li class="d-flex mb-2">
-                  <i class="bx bx-check lead text-primary me-2" style="margin-top: .125rem;"></i>
-                  Purus vestibulum pharetra amet tincidunt pretium
-                </li>
-                <li class="d-flex mb-2">
-                  <i class="bx bx-check lead text-primary me-2" style="margin-top: .125rem;"></i>
-                  Haretra justo magna pharetra dui gravida sed nec
-                </li>
-                <li class="d-flex">
-                  <i class="bx bx-check lead text-primary me-2" style="margin-top: .125rem;"></i>
-                  Venenatis risus faucibus volutpat amet feugiat a
-                </li>
+                ${
+                  cta.points.length ? 
+                    `<ul class="list-unstyled fs-lg d-none d-md-block">
+                      ${
+                        cta.points.map(point => `
+                          <li class="d-flex mb-2">
+                            <i class="bx bx-check lead text-primary me-2" style="margin-top: .125rem;"></i>
+                            ${point.title}
+                          </li>
+                          `).join("")
+                        }
+                    </ul>`
+                  : ""
+                }
               </ul>
               <a href="${cta.button.link}" ${cta.button.isExternal ? `target="__blank"` : ""} class="btn btn-lg btn-primary shadow-primary w-100 w-sm-auto">${cta.button.title}</a>
             </div>
@@ -511,7 +513,7 @@
                     cta.points.map(point => `
                       <li class="d-flex mb-2">
                         <i class="bx bx-check lead text-primary me-2" style="margin-top: .125rem;"></i>
-                        Purus vestibulum pharetra amet tincidunt pretium
+                        ${point.title}
                       </li>
                       `).join("")
                     }
